@@ -7,6 +7,7 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g -pthread")
 # common source files
 set (SOURCE_FILES
     "${CMAKE_SOURCE_DIR}/mredis/src/zmalloc.cc"
+    "${CMAKE_SOURCE_DIR}/mredis/src/string.cc"
     )
 
 # test source files 

@@ -1,5 +1,5 @@
-#ifndef MREDIS_INCLUDE_SDS_H_
-#define MREDIS_INCLUDE_SDS_H_
+#ifndef MREDIS_SRC_STRING_H_
+#define MREDIS_SRC_STRING_H_
 
 #include <memory>
 #include <vector>

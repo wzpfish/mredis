@@ -1,5 +1,5 @@
-#ifndef MREDIS_INCLUDE_ZMALLOC_H_
-#define MREDIS_INCLUDE_ZMALLOC_H_
+#ifndef MREDIS_SRC_ZMALLOC_H_
+#define MREDIS_SRC_ZMALLOC_H_
 
 namespace mredis {
     void *zmalloc(size_t size);

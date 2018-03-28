@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.0)
 project(mredis)
 include_directories(./)
+include_directories(./thirdparty/gtest/include) 
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -g -pthread")
 
@@ -12,8 +13,17 @@ set (SOURCE_FILES
 
 # test source files 
 set (TEST_SOURCE_FILES
-     ""
+    "${CMAKE_SOURCE_DIR}/mredis/test/test_main.cc"
+    "${CMAKE_SOURCE_DIR}/mredis/test/dict_test.cc"
     )
 
-add_executable (mredis
-  ${SOURCE_FILES})
+add_executable (mredistest
+  ${SOURCE_FILES}
+  ${TEST_SOURCE_FILES})
+
+# link thirdparty libs
+set (THIRDPARTY_DIR ${CMAKE_SOURCE_DIR}/thirdparty)
+
+target_link_libraries (mredistest
+    "${THIRDPARTY_DIR}/gtest/libgtest.a"
+    )

@@ -46,16 +46,33 @@ class Dictionary {
 
  public:
   Dicionary(std::function<size_t(const TKey)> hash_func) : hash_func_(hash_func) {}
+  ~Dictionary();
   bool Expand(size_t size);
-  bool Add(TKey key, TValue value);
+  bool Shrink();
+  bool Insert(TKey key, TValue value);
+  bool Replace(TKey key, TValue value);
+  bool Erase(TKey key);
+  bool TryFetch(const TKey& key);
+  void Clear();
+  size_t RehashMilliseconds(int ms);
+  
  private:
+  void Clear(DictTable& dict);
   bool ExpandIfNeed();
-  DictEntry* AddRaw(TKey key);
+  DictEntry* InsertRaw(TKey key);
+  DictEntry* ReplaceRaw(TKey key);
   inline bool IsRehashing() { return rehashidx_ != -1 }
   void RehashStep();
   int RehashNStep(int n);
   int KeyIndex(TKey key);
+  DictEntry* Find(TKey key);
 };
 
+void EnableResize() {
+  canResize = true;
+}
+void DisableResize() {
+  canResize = false;
+}
 
 #endif

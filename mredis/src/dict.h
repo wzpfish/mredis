@@ -120,7 +120,7 @@ class DIterator {
   TDictionary* dictionary_;
   int dict_index_;
   int64_t index_;
-  int64_t fingerprint_;
+  size_t fingerprint_;
   bool safe_;
   typename TDictionary::DictEntry* entry_;
   typename TDictionary::DictEntry* next_entry_;
@@ -133,6 +133,17 @@ class DIterator {
     entry_ = next_entry_ = nullptr;
   }
 
+  ~DIterator() {
+    if (!(dict_index_ == 0 && index_ == -1)) {
+      if (safe_) {
+        dictionary_->iterator_count_--;
+      }
+      else {
+        assert(dictionary_->FingerPrint() == fingerprint_);
+      }
+    }
+  }
+
   DIterator& operator++() {
     while(true) {
       if (entry_ == nullptr) {
@@ -140,7 +151,7 @@ class DIterator {
         // If it's the initial iterator.
         if (dict_index_ == 0 && index_ == -1) {
           if (safe_) dictionary_->iterator_count_++;
-          else fingerprint_= dictionary_->FingerPrint();
+          else fingerprint_ = dictionary_->FingerPrint();
         }
         index_++;
         if (static_cast<size_t>(index_) >= dict->size) {

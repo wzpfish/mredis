@@ -15,3 +15,11 @@ Redis中自己实现了Hash字典，类似c++中的unordered_map。hash字典是
 * rehash一次做完还是分散给不同操作？
 
     rehash一次做完当然是最方便的，然而这样效率很低，线程需要block住。redis中采用的做法是将rehash的步骤分散到每一个操作中去，比如查询操作前和插入操作前都会rehash一次。这样可以将rehash成本分摊开。
+
+## 迭代器实现
+redis中字典的迭代器分两种，safe和unsafe。
+
+如果使用safe迭代器，则字典保证在迭代过程中不进行rehash操作（通过记录dict关联的迭代器个数，如果个数大于1，则rehash不进行）；如果使用unsafe迭代器，则字典不保证迭代过程中不进行rehash操作，需要调用者自己保证不去修改字典的值。
+
+### Questions TODO:
+- [ ] 为什么要使用safe和unsafe两种迭代器？

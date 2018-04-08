@@ -39,21 +39,25 @@ TEST_F(DictTest, Iterate) {
   for (int i = 0; i < max_count; ++i) {
     dict_.Insert(i, i + 1);
   }
-
-  int count = 0;
-  for (auto it = dict_.SafeBegin(); it != dict_.SafeEnd(); ++it) {
-    count++;
-    ASSERT_EQ(it->key + 1, it->value);
+  
+  {
+    int count = 0;
+    for (auto it = dict_.Begin(); it != dict_.End(); ++it) {
+      count++;
+      ASSERT_EQ(it->key + 1, it->value);
+    }
+    ASSERT_EQ(count, max_count);
   }
-  ASSERT_EQ(count, max_count);
 
-  count = 0;
-  for (auto it = dict_.Begin(); it != dict_.End(); it++) {
-    count++;
-    ASSERT_EQ(it->key + 1, it->value);
-    dict_.Erase(it->key);
+  {
+    int count = 0;
+    for (auto it = dict_.SafeBegin(); it != dict_.SafeEnd(); it++) {
+      count++;
+      ASSERT_EQ(it->key + 1, it->value);
+      dict_.Erase(it->key);
+    }
+    ASSERT_EQ(count, max_count);
   }
-  ASSERT_EQ(count, max_count);
 }
 
 }

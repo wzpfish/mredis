@@ -35,11 +35,22 @@ namespace {
 namespace mredis {
 
 template<typename TKey, typename TValue>
+class DIterator;
+
+/* TKey must support the hash function which passed in.
+ * TValue must have default constructor and copy assignment operator.
+ */
+template<typename TKey, typename TValue>
 class Dictionary {
  private:
+  friend class DIterator<TKey, TValue>;
   struct DictEntry {
+   public:
     TKey key;
     TValue value;
+   private:
+    friend class Dictionary<TKey, TValue>;
+    friend class DIterator<TKey, TValue>;
     DictEntry* next;
   };
   
@@ -56,7 +67,7 @@ class Dictionary {
       used = 0;
     }
   };
-  
+
   // 局部作用域变量不会初始化，需要手动reset!
   DictTable dict_[2];
   long rehashidx_;
@@ -65,6 +76,7 @@ class Dictionary {
   std::function<size_t(const TKey& key)> hash_func_;
 
  public:
+  using Iterator = DIterator<TKey, TValue>;
   Dictionary(std::function<size_t(const TKey&)> hash_func) 
       : rehashidx_(-1), iterator_count_(0), hash_func_(hash_func) {
     dict_[0].Reset();
@@ -83,6 +95,11 @@ class Dictionary {
   std::vector<std::pair<TKey*, TValue*>> FetchSome(int count);
   void Clear();
   size_t RehashMilliseconds(int ms);
+  Iterator SafeBegin();
+  Iterator SafeEnd();
+  Iterator Begin();
+  Iterator End();
+  size_t FingerPrint();
   
  private:
   void Clear(DictTable& dict);
@@ -96,6 +113,81 @@ class Dictionary {
   DictEntry* Find(const TKey& key);
 };
 
+template <typename TKey, typename TValue>
+class DIterator {
+ private:
+  using TDictionary = Dictionary<TKey, TValue>;
+  TDictionary* dictionary_;
+  int dict_index_;
+  int64_t index_;
+  int64_t fingerprint_;
+  bool safe_;
+  typename TDictionary::DictEntry* entry_;
+  typename TDictionary::DictEntry* next_entry_;
+ public:
+  DIterator(TDictionary* dictionary, bool safe) {
+    dictionary_ = dictionary;
+    dict_index_ = 0;
+    index_ = -1;
+    safe_ = safe;
+    entry_ = next_entry_ = nullptr;
+  }
+
+  DIterator& operator++() {
+    while(true) {
+      if (entry_ == nullptr) {
+        typename TDictionary::DictTable* dict = &dictionary_->dict_[dict_index_];
+        // If it's the initial iterator.
+        if (dict_index_ == 0 && index_ == -1) {
+          if (safe_) dictionary_->iterator_count_++;
+          else fingerprint_= dictionary_->FingerPrint();
+        }
+        index_++;
+        if (static_cast<size_t>(index_) >= dict->size) {
+          if (dictionary_->IsRehashing() && dict_index_ == 0) {
+            dict_index_ = 1;
+            index_ = 0;
+            dict = &dictionary_->dict_[dict_index_];
+          }
+          else break;
+        }
+        entry_ = dict->table[index_];
+      }
+      else {
+        entry_ = next_entry_;
+      }
+      if (entry_ != nullptr) {
+        next_entry_ = entry_->next;
+        return *this;
+      }
+    }
+    entry_ = nullptr;
+    return *this;
+  }
+
+  DIterator operator++(int) { 
+    DIterator temp = *this;
+    ++*this;
+    return temp;
+  }
+
+  bool operator==(const DIterator<TKey, TValue>& rhs) const {
+    return dictionary_ == rhs.dictionary_ && entry_ == rhs.entry_;
+  }
+
+  bool operator!=(const DIterator<TKey, TValue>& rhs) const {
+    return !((*this) == rhs);
+  }
+
+  DIterator& operator*() {
+    return *entry_;
+  }
+  
+  typename TDictionary::DictEntry* operator->() {
+    return entry_;
+  }
+  
+};
 
 template<typename TKey, typename TValue>
 Dictionary<TKey, TValue>::~Dictionary() {
@@ -475,6 +567,61 @@ std::vector<std::pair<TKey*, TValue*>> Dictionary<TKey, TValue>::FetchSome(int c
     rand_index = (rand_index + 1) & maxsizemask;
   }
   return result;
+}
+
+template<typename TKey, typename TValue>
+typename Dictionary<TKey, TValue>::Iterator Dictionary<TKey, TValue>::SafeBegin() {
+  Iterator it = Iterator(this, true);
+  it++;
+  return it;
+}
+
+template<typename TKey, typename TValue>
+typename Dictionary<TKey, TValue>::Iterator Dictionary<TKey, TValue>::SafeEnd() {
+  Iterator it = Iterator(this, true);
+  return it;
+}
+
+template<typename TKey, typename TValue>
+typename Dictionary<TKey, TValue>::Iterator Dictionary<TKey, TValue>::Begin() {
+  Iterator it = Iterator(this, false);
+  it++;
+  return it;
+}
+
+template<typename TKey, typename TValue>
+typename Dictionary<TKey, TValue>::Iterator Dictionary<TKey, TValue>::End() {
+  Iterator it = Iterator(this, false);
+  return it;
+}
+
+/* Hash for a dictionary, mainly use pointer, size and used for
+ * two internal dicts.
+ */
+template <typename TKey, typename TValue>
+size_t Dictionary<TKey, TValue>::FingerPrint() {
+  size_t integers[6] = {
+    reinterpret_cast<size_t>(dict_[0].table),
+    dict_[0].size,
+    dict_[0].used,
+    reinterpret_cast<size_t>(dict_[1].table),
+    dict_[1].size,
+    dict_[1].used
+  };
+
+  size_t hash = 0;
+  for (int i = 0; i < 6; ++i) {
+    hash += integers[i];
+    /* For the hashing step we use Tomas Wang's 64 bit integer hash. */
+    hash = (~hash) + (hash << 21); // hash = (hash << 21) - hash - 1;
+    hash = hash ^ (hash >> 24);
+    hash = (hash + (hash << 3)) + (hash << 8); // hash * 265
+    hash = hash ^ (hash >> 14);
+    hash = (hash + (hash << 2)) + (hash << 4); // hash * 21
+    hash = hash ^ (hash >> 28);
+    hash = hash + (hash << 31);
+  }
+  return hash;
 }
 
 /* MurmurHash2, by Austin Appleby

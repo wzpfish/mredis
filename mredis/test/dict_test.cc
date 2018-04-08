@@ -34,4 +34,26 @@ TEST_F(DictTest, InsertFetch) {
   ASSERT_EQ(dict_.Size(), static_cast<size_t>(0));
 }
 
+TEST_F(DictTest, Iterate) {
+  int max_count = 1000000;
+  for (int i = 0; i < max_count; ++i) {
+    dict_.Insert(i, i + 1);
+  }
+
+  int count = 0;
+  for (auto it = dict_.SafeBegin(); it != dict_.SafeEnd(); ++it) {
+    count++;
+    ASSERT_EQ(it->key + 1, it->value);
+  }
+  ASSERT_EQ(count, max_count);
+
+  count = 0;
+  for (auto it = dict_.Begin(); it != dict_.End(); it++) {
+    count++;
+    ASSERT_EQ(it->key + 1, it->value);
+    dict_.Erase(it->key);
+  }
+  ASSERT_EQ(count, max_count);
+}
+
 }

@@ -6,22 +6,23 @@
 #include <cstdio>
 #include <cassert>
 
+#include <iostream>
+
 #include "mredis/src/string.h"
 #include "mredis/src/zmalloc.h"
 
 namespace mredis{
 String::String(): String(nullptr, 0) { }
 
-String::String(long long int value) {
+String::String(long long int value):
+{
   const char* str = std::to_string(value).c_str();
+  //TODO: cannot call like this!!!!
   String(str, std::strlen(str));
 }
 
-String::String(const char* init) { 
-  size_t initlen = init == nullptr ? 0 : std::strlen(init);
-  String(init, initlen);
-}
-
+String::String(const char* init)
+    : String(init, init == nullptr ? 0 : std::strlen(init)) { }
 String::String(const String& s): String(s.buf_, s.len_) { }
 
 String::String(const void* init, size_t initlen) {
@@ -37,6 +38,7 @@ String::String(const void* init, size_t initlen) {
   buf_[initlen] = '\0';
   len_ = initlen;
   free_ = 0;
+  std::cout << len_ << std::endl;
 }
 
 String::String(std::vector<const char*> tokens, const char* sep): String() {

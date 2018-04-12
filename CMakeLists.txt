@@ -14,6 +14,7 @@ set (SOURCE_FILES
 # test source files 
 set (TEST_SOURCE_FILES
     "${CMAKE_SOURCE_DIR}/mredis/test/test_main.cc"
+    "${CMAKE_SOURCE_DIR}/mredis/test/string_test.cc"
     "${CMAKE_SOURCE_DIR}/mredis/test/dict_test.cc"
     )
 

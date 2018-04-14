@@ -6,26 +6,12 @@
 #include <cstdio>
 #include <cassert>
 
-#include <iostream>
-
 #include "mredis/src/string.h"
 #include "mredis/src/zmalloc.h"
 
 namespace mredis{
-String::String(): String(nullptr, 0) { }
-
-String::String(long long int value):
-{
-  const char* str = std::to_string(value).c_str();
-  //TODO: cannot call like this!!!!
-  String(str, std::strlen(str));
-}
-
-String::String(const char* init)
-    : String(init, init == nullptr ? 0 : std::strlen(init)) { }
-String::String(const String& s): String(s.buf_, s.len_) { }
-
-String::String(const void* init, size_t initlen) {
+  
+void String::Init(const void* init, size_t initlen) {
   if (init != nullptr) {
     buf_ = static_cast<char*>(zmalloc(initlen + 1));
   }
@@ -38,7 +24,29 @@ String::String(const void* init, size_t initlen) {
   buf_[initlen] = '\0';
   len_ = initlen;
   free_ = 0;
-  std::cout << len_ << std::endl;
+}
+
+String::String(): String(nullptr, 0) { }
+
+String::String(long long int value) {
+  const char* str = std::to_string(value).c_str();
+  // NOTE: cannot write like this: String(str, std::strlen(str))
+  Init(str, std::strlen(str));
+}
+
+String::String(const char* init) : String(init, init == nullptr ? 0 : std::strlen(init)) { }
+
+String::String(const String& s): String(s.buf_, s.len_) { }
+
+String::String(String&& s) noexcept {
+  buf_ = s.buf_;
+  len_ = s.len_;
+  free_ = s.free_;
+  s.buf_ = nullptr;
+}
+
+String::String(const void* init, size_t initlen) {
+  Init(init, initlen);
 }
 
 String::String(std::vector<const char*> tokens, const char* sep): String() {
@@ -53,6 +61,22 @@ String::String(std::vector<const char*> tokens, const char* sep): String() {
 String::~String() {
   if (buf_ == nullptr) return;
   zfree(buf_);
+  buf_ = nullptr;
+}
+
+String& String::operator=(const String& rhs) {
+  if (buf_ != nullptr) zfree(buf_);
+  Init(rhs.buf_, rhs.len_);
+  return *this;
+}
+
+String& String::operator=(String&& rhs) noexcept {
+  if (buf_ != nullptr) zfree(buf_);
+  buf_ = rhs.buf_;
+  len_ = rhs.len_;
+  free_ = rhs.free_;
+  rhs.buf_ = nullptr;
+  return *this;
 }
 
 bool String::operator==(const String& rhs) {
@@ -71,6 +95,13 @@ bool String::operator>(const String& rhs) {
   int cmp = std::memcmp(buf_, rhs.buf_, std::min(len_, rhs.len_));
   if (cmp == 0) return len_ > rhs.len_;
   return cmp > 0;
+}
+
+std::ostream& operator<<(std::ostream& os, const String& string) {
+  for (size_t i = 0; i < string.len_; ++i) {
+    os << string.buf_[i];
+  }
+  return os;
 }
 
 void String::Cat(char c) {

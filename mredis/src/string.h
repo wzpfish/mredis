@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <cstdarg>
+#include <iostream>
 
 namespace {
   const size_t kStringMaxPreAlloc = 1024*1024;
@@ -30,12 +31,16 @@ public:
   String(const char* init);
   String(const void* init, size_t initlen);
   String(const String& s);
+  String(String&& s) noexcept;
   String(std::vector<const char*> tokens, const char* sep);
   ~String();
   
+  String& operator=(const String& rhs);
+  String& operator=(String&& rhs) noexcept;
   bool operator <(const String& rhs);
   bool operator >(const String& rhs);
   bool operator ==(const String& rhs);
+  friend std::ostream& operator<<(std::ostream& os, const String& string);
 
   void GrowZero(size_t len);
 
@@ -68,6 +73,7 @@ public:
   size_t AllocSize();
 
 private:
+  void Init(const void* t, size_t len);
   void CatPrintf(const char* fmt, std::va_list vlist);
 };
 

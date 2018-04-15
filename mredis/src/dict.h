@@ -190,11 +190,11 @@ class DIterator {
     return !((*this) == rhs);
   }
 
-  DIterator& operator*() {
+  typename TDictionary::DictEntry& operator*() const {
     return *entry_;
   }
   
-  typename TDictionary::DictEntry* operator->() {
+  typename TDictionary::DictEntry* operator->() const {
     return entry_;
   }
   

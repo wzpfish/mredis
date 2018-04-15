@@ -65,8 +65,7 @@ String::~String() {
 }
 
 String& String::operator=(const String& rhs) {
-  if (buf_ != nullptr) zfree(buf_);
-  Init(rhs.buf_, rhs.len_);
+  Copy(rhs.buf_, rhs.len_);
   return *this;
 }
 
@@ -79,19 +78,19 @@ String& String::operator=(String&& rhs) noexcept {
   return *this;
 }
 
-bool String::operator==(const String& rhs) {
+bool String::operator==(const String& rhs) const {
   if (len_ != rhs.len_) return false;
   int cmp = std::memcmp(buf_, rhs.buf_, std::min(len_, rhs.len_));
   return cmp == 0;
 }
 
-bool String::operator<(const String& rhs) {
+bool String::operator<(const String& rhs) const {
   int cmp = std::memcmp(buf_, rhs.buf_, std::min(len_, rhs.len_));
   if (cmp == 0) return len_ < rhs.len_;
   return cmp < 0;
 }
 
-bool String::operator>(const String& rhs) {
+bool String::operator>(const String& rhs) const {
   int cmp = std::memcmp(buf_, rhs.buf_, std::min(len_, rhs.len_));
   if (cmp == 0) return len_ > rhs.len_;
   return cmp > 0;
@@ -276,6 +275,10 @@ void String::Trim(const char* cset) {
   len_ = len;
 }
 
+std::vector<String> String::Split(const char* sep, size_t seplen) {
+  return std::move(SplitLen(buf_, len_, sep, seplen));
+}
+
 void String::Range(int start, int end) {
   if (start < 0) start += len_;
   if (end < 0) end += len_;
@@ -359,12 +362,12 @@ size_t String::AllocSize() {
 }
 
 std::vector<String> SplitLen(
-    const char* s, int len, const char* sep, int seplen) {
+    const char* s, size_t len, const char* sep, size_t seplen) {
   std::vector<String> tokens;
   if (len < 1 || seplen < 1) return tokens;
   
-  int start = 0;
-  for (int i = 0; i < len - seplen + 1; ++i) {
+  size_t start = 0;
+  for (size_t i = 0; i < len - seplen + 1; ++i) {
     if (std::memcmp(s + i, sep, seplen) == 0) {
       tokens.push_back(String(s + start, i - start));
       start = i + seplen;

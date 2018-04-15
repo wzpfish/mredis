@@ -37,9 +37,9 @@ public:
   
   String& operator=(const String& rhs);
   String& operator=(String&& rhs) noexcept;
-  bool operator <(const String& rhs);
-  bool operator >(const String& rhs);
-  bool operator ==(const String& rhs);
+  bool operator <(const String& rhs) const;
+  bool operator >(const String& rhs) const;
+  bool operator ==(const String& rhs) const;
   friend std::ostream& operator<<(std::ostream& os, const String& string);
 
   void GrowZero(size_t len);
@@ -56,6 +56,7 @@ public:
   void Copy(const char* t, size_t len);
 
   void Trim(const char* cset);
+  std::vector<String> Split(const char* sep, size_t seplen);
 
   void Range(int start, int end);
   
@@ -77,7 +78,7 @@ private:
   void CatPrintf(const char* fmt, std::va_list vlist);
 };
 
-std::vector<String> SplitLen(const char* s, int len, const char* sep, int seplen);
+std::vector<String> SplitLen(const char* s, size_t len, const char* sep, size_t seplen);
 
 }
 #endif

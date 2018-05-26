@@ -7,3 +7,4 @@ I list some notes of source code, including different modules.
 - [sds](https://github.com/wzpfish/mredis/tree/master/notes/sds.md)
 - [dict](https://github.com/wzpfish/mredis/tree/master/notes/dict.md)
 - [skiplist](https://github.com/wzpfish/mredis/tree/master/notes/skiplist.md)
+- [intset](https://github.com/wzpfish/mredis/tree/master/notes/intset.md)
